@@ -77,5 +77,24 @@ npm run dev
 - 列表接口统一返回 `{ items, total, page, size }`，动作接口统一返回 `{ ok, message }`。
 - 状态流转只允许在 `app/services` 里改，路由层不做业务判断。
 
+## 批次导入分片预检
+
+批次导入管理（`import_batch`）在确认入库前提供逐片预检，预检接口定义在
+`backend/app/routers/import_batch.py`，领域逻辑在 `app/services/import_batch.py`
+与 `app/services/data_import_rule.py`：
+
+- `POST /api/import_batch/{id}/split`：门店数据按分片大小切分，登记各分片，不写目标表。
+- `POST /api/import_batch/{id}/precheck`：逐片按入库规则字段映射预检，给出每条数据的
+  门店编码转换值或拒绝理由；以「分片+源行」为处理键，补跑中断分片时已完成记录不重复计入。
+- `POST /api/import_batch/{id}/recheck`：修订源数据后复查指定分片。
+- `GET  /api/import_batch/{id}/precheck/checklist`：汇总逐片结果为可确认导入清单，
+  标注分片命中的规则版本；跨分片版本漂移或存在拒绝时 `confirmable=false`。
+- `GET  /api/import_batch/{id}/precheck/export`：下载预检 CSV，被拒记录可定位原数据行
+  与规则版本（如外部编码 N-10 未映射出门店编码）。
+- `POST /api/import_batch/{id}/confirm`：唯一会写门店目标表的环节，仅写入预检通过记录
+  并按门店编码去重；预检阶段全程只读。
+
+后端测试：`backend/.venv/bin/python -m app.tests.test_import_precheck`。
+
 领域：数据工程
 子方向：数仓与数据湖

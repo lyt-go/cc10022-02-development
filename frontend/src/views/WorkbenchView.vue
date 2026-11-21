@@ -86,6 +86,10 @@
       </form>
     </div>
 
+    <div v-if="meta.key === 'import_batch'" class="precheck-slot">
+      <ImportPrecheckPanel :batches="rows" />
+    </div>
+
     <footer class="page-foot">
       <span>共 {{ total }} 条{{ meta.name }}记录</span>
       <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
@@ -96,6 +100,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 
+import ImportPrecheckPanel from '@/components/ImportPrecheckPanel.vue'
 import {
   createEntry,
   downloadEntries,
